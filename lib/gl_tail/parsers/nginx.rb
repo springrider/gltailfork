@@ -7,8 +7,14 @@
 # Parser which handles nginx logs
 class NginxParser < Parser
   def parse( line )
-    _, remote_addr, remote_user, status, request, size, referrer, http_user_agent, http_x_forwarded_for = /^([^\s]+) - ([^\s]+) \[.*\] (\d+) \"(.+)\" (\d+) \"(.*)\" \"([^\"]*)\" \"(.*)\"/.match(line).to_a
+    #10.28.53.4 - - [20/Sep/2011:01:12:09 -0500] "GET /comments/kmpf/.json?limit=1000&sort=top HTTP/1.0" 200 1958 "-" "Reddit_Joke/1.9 (iPhone; iPhone OS 4.2.1; zh-Hans; iPhone1,2; 156762c18a12d32085a974eb83784ff67417f7c1; 0; JB_0; AS_0)" 211.151.67.116
+    #_, remote_addr, remote_user, status, request, size, referrer, http_user_agent, http_x_forwarded_for = /^([^\s]+) - ([^\s]+) \[.*\] (\d+) \"(.+)\" (\d+) \"(.*)\" \"([^\"]*)\" \"(.*)\"/.match(line).to_a
 
+    #/^([^\s]+) - - \[.*\] \"([^"]+)\" ([^\s]+) ([^\s]+) "-" \"([^"]+)\" ([^\s]+)/.match(line).to_a
+    _,remote_addr,request,status,size,http_user_agent,http_x_forward_for = /^([^\s]+) - - \[.*\] \"([^"]+)\" ([^\s]+) ([^\s]+) "-" \"([^"]+)\" ([^\s]+)/.match(line).to_a    
+    #puts "request", remote_addr
+    #puts request
+    referrer = nil
     if request
       _, referrer_host, referrer_url = /^http[s]?:\/\/([^\/]+)(\/.*)/.match(referrer).to_a if referrer
       method, full_url, _ = request.split(' ')
@@ -24,6 +30,8 @@ class NginxParser < Parser
         type = 'image'
       elsif url.include?('.css')
         type = 'css'
+      elsif url.include?('.json')
+        type = 'json'
       elsif url.include?('.js')
         type = 'javascript'
       elsif url.include?('.swf')
@@ -41,6 +49,8 @@ class NginxParser < Parser
 
       add_event(:block => 'info', :name => "Logins", :message => "Login...", :update_stats => true, :color => [1.5, 1.0, 0.5, 1.0]) if method == "POST" && url.include?('/login')
       add_event(:block => 'info', :name => "Registration", :message => "Register", :update_stats => true, :color => [1.5, 0.0, 0.0, 1.0]) if method == "POST" && url.include?('/register')
+      add_event(:block => 'info', :name => "Posts", :message => "Post", :update_stats => true, :color => [1.5, 0.0, 0.0, 1.0]) if method == "POST" && url.include?('/submit')
+      add_event(:block => 'info', :name => "Comments", :message => "Comment", :update_stats => true, :color => [1.5, 0.0, 0.0, 1.0]) if method == "POST" && url.include?('/comment')
     end
   end
 end

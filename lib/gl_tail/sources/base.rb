@@ -18,6 +18,7 @@ module GlTail
       
       def parser=(name)
         if klass = Parser.registry[name.to_sym]
+          puts klass
           @parser = klass.new(self)
         else
           raise "Couldnt find a Parser by name: #{name}, try --parsers for a list of available parsers"
